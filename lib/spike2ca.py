@@ -1,5 +1,23 @@
 import numpy as np
 
+'''
+This library is designed to simulate Ca indicator fluorescent signal,
+emitted by a population of cells.
+
+Current Features:
+* For each neuron, convolve spikes with decaying exponential
+* Weighted-sum signals over all neurons with random coefficients
+
+TODO:
+* Noise on final signal
+* Baseline-correction error as done in real experiments
+* Geometry - sampling only part of the population
+* More realistic variability in neuronal expression
+* Effects of dendritic and axonal signals, neuropil?
+'''
+
+
+# Compute discretized exponential decay convolution
 def approxDelayConv(data, TAU, DT):
     rez = np.zeros(len(data)+1)
     for i in range(1, len(data)+1):
@@ -7,34 +25,35 @@ def approxDelayConv(data, TAU, DT):
 
     return rez[1:]
 
-def samplingRangeScale(x, delta, tau):
-    return np.multiply(x < delta, 1.0) + np.multiply(x >= delta, np.exp(-(x-delta)/tau))
+# # Imitate geometric sampling, by selecting some neurons 100% and the rest exponentially dropping
+# def samplingRangeScale(x, delta, tau):
+#     return np.multiply(x < delta, 1.0) + np.multiply(x >= delta, np.exp(-(x-delta)/tau))
 
 
 # Take discretized spiking signal, produce macroscopic CA indicator response
-def spike2ca(spikeTimes, neuronIdxs, DT, TAU_CA_IND, MIN_TIME, MAX_TIME, samplingRange):
-
-    # Get properties of the distribution
-#     MIN_TIME = np.min(spikeTimes)
-#     MAX_TIME = np.max(spikeTimes)
-    MIN_NEUR_ID = int(np.min(neuronIdxs))
-    MAX_NEUR_ID = int(np.max(neuronIdxs))
-    N_NEURON = MAX_NEUR_ID - MIN_NEUR_ID + 1
+# NOTE: NEURON INDICES MUST BE CONTIGUOUS
+def spike2ca(spikeTimes, neuronIdxs, p):
 
     # Simulate variability of Ca indicator response strength,
     # and visibility of individual neurons via random factor
-    neuronVariability = samplingRangeScale(np.random.uniform(0, 1, N_NEURON), samplingRange, 0.1)
+#     neuronVariability = samplingRangeScale(np.random.uniform(0, 1, p['N_NEURON']), p['SAMPLING_RANGE'], 0.1)
+    neuronVariability = np.random.normal(1, p['MAX_INTENSITY_STD'], p['N_NEURON'])
+    neuronVisibility = np.random.uniform(0, 1, p['N_NEURON'])
+    neuronVariability[neuronVisibility > p['RATIO_VISIBLE']] = 0
 
     # Take average spike trace, considering variability
-    times_discr = np.arange(MIN_TIME, MAX_TIME + DT, DT)
+    times_discr = np.arange(p['MIN_TIME'], p['MAX_TIME'] + p['DT'], p['DT'])
     N_TIME_STEP = len(times_discr)
     signalCaAvg = np.zeros(N_TIME_STEP)
 
-    for t, n in zip(spikeTimes, neuronIdxs):
-        signalCaAvg[int((t - MIN_TIME) / DT)] += neuronVariability[int(n) - MIN_NEUR_ID]
+    spikeBins = ((spikeTimes - p['MIN_TIME']) / p['DT']).astype(int)
+    neuronIdxsSh = (neuronIdxs - p['MIN_NEUR_ID']).astype(int)
+    
+    for b, i in zip(spikeBins, neuronIdxsSh):
+        signalCaAvg[b] += neuronVariability[i]
 
     # Convolve time-signal with indicator response
-    signalCaAvg = approxDelayConv(signalCaAvg, TAU_CA_IND, DT)
+    signalCaAvg = approxDelayConv(signalCaAvg, p['TAU_CA_IND'], p['DT'])
 
     return times_discr, signalCaAvg
 
