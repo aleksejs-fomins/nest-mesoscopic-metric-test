@@ -3,8 +3,6 @@ Mice and indicators
   * mtp -> GCaMP
   * mvg -> RCamp
 
-
-
 STEPS-YARO-TE
   - Bin time to 200ms
   - Bin dF/F tu round((max-min) / (3*sigma))
