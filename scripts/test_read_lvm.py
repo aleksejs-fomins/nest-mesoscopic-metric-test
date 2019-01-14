@@ -12,4 +12,5 @@ data2D = read_lvm(inputpath)
 plt.figure()
 for i in range(data2D.shape[0]):
     plt.plot(data2D[i], label="channel_"+str(i))
+plt.legend()
 plt.show()

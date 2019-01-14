@@ -4,6 +4,8 @@ import numpy as np
 import scipy.io
 
 def read_lvm(filename):
+    print("Reading LVM file", filename, "... ")
+    
     # Read file
     f = open(filename, 'r')
     lines = f.readlines()
@@ -29,7 +31,7 @@ def read_lvm(filename):
     for i in range(nChannel):
         data2D[i] = times[channel_idxs == i]
         
-    print("Read LVM file", filename, "with data shape", data2D.shape)
+    print("... done! Data shape read ", data2D.shape)
     return data2D
 
 

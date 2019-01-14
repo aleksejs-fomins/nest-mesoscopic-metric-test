@@ -9,6 +9,8 @@ data, behaviour = read_mat(inputpath)
 
 nTrials, nTimes, nChannels = data.shape
 
+print("Loaded neuronal data with (nTrials, nTimes, nChannels)=", data.shape)
+
 tlst = 50*np.linspace(0, nTimes, nTimes)
 
 fig, ax = plt.subplots(ncols=2, tight_layout=True)
