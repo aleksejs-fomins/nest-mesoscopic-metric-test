@@ -87,9 +87,9 @@ for iTrial in range(N_TRIAL):
 #plt.show()
 
 
-#######################
-# Save result as HDF5
-#######################
+########################
+## Save result as HDF5
+########################
 src_path_h5 = os.path.join(pwd_rez, "source_selftest_rand.h5")
 print("Writing source data to", src_path_h5)
 src_file_h5 = h5py.File(src_path_h5, "w")
@@ -99,14 +99,13 @@ src_file_h5.close()
 #######################
 # Run NIFTY wrapper
 #######################
-rez_path_h5 = nifty_wrapper(src_path_h5)
+rez_path_h5 = nifty_wrapper(src_path_h5, pwd_rez)
 
 #######################
 # Load NIFTY result from HDF5
 #######################
 rez_file_h5 = h5py.File(rez_path_h5, "r")
 rez_data = rez_file_h5['results']
-rez_file_h5.close()
 
 ######################
 # Analysis
@@ -156,3 +155,5 @@ ax[0][0].hist(te_1D)
 ax[0][1].hist(p_1D)
 ax[1][0].hist(te_1D_filter)
 plt.show()
+
+rez_file_h5.close()

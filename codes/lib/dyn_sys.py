@@ -10,7 +10,7 @@ class DynSys:
     def __init__(self, param):
         self.param = param
         N_DATA, N_NODE, ALPHA = param['N_DATA'], param['N_NODE'], param['ALPHA']
-        T, STD = param['T'], param['STD']
+        MAG, T, STD = param['MAG'], param['T'], param['STD']
         
         #ALPHA_RAND = np.linspace(ALPHA, 1.0, N_NODE)
 
@@ -26,10 +26,10 @@ class DynSys:
         self.data = np.zeros((N_NODE, N_DATA))
         for i in range(1, N_DATA):
             self.data[:, i] = self.M.dot(self.data[:, i-1])        # Propagate signal
-            self.data[0, i] += np.sin(2 * np.pi * i / T)           # Input to the first node
+            self.data[0, i] += MAG * np.sin(2 * np.pi * i / T)     # Input to the first node
             self.data[:, i] += np.random.normal(0, STD, N_NODE)    # Noise to all nodes
             
-    def plot(self):
+    def plot(self, draw=False):
         print("DynSys: plotting results")
         fig, ax = plt.subplots(ncols=2, figsize=(15,5))
         ax[0].imshow(self.M)
@@ -38,7 +38,11 @@ class DynSys:
             ax[1].plot(self.data[j], label=str(j))
         ax[1].legend()
         ax[1].set_title("Dynamics")
-        plt.show()
+        
+        if draw:
+            plt.draw()
+        else:
+            plt.show()
     
     def save(self, filename):
         print("DynSys: saving to", filename)

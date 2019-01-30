@@ -9,9 +9,6 @@ import h5py
 path1p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 path2p = os.path.dirname(path1p)
 pwd_lib = os.path.join(path1p, "lib/")
-pwd_rez = os.path.join(os.path.join(path2p, "data/"), "sim-ds-mat")
-
-print(pwd_lib)
 
 # Set paths
 sys.path.append(pwd_lib)
@@ -28,7 +25,7 @@ from matlab.matlab_lib import loadmat
     5) Save results as HDF5
 '''
 
-def nifty_wrapper(src_path_h5):
+def nifty_wrapper(src_path_h5, rez_path):
     # 1) Load data from HDF5
     print("Reading source data from", src_path_h5)
     src_file_h5 = h5py.File(src_path_h5, "r")
@@ -38,7 +35,7 @@ def nifty_wrapper(src_path_h5):
     print("read data from H5 : ", src_data.shape, type(src_data))
     
     # 2) Save data as temporary .mat
-    src_path_mat = os.path.join(pwd_rez, "source_selftest_rand.mat")
+    src_path_mat = os.path.join(rez_path, "source_selftest_rand.mat")
     print("Converting data to matlab file", src_path_mat)
     scipy.io.savemat(src_path_mat, {"data" : src_data})
 
@@ -56,15 +53,20 @@ def nifty_wrapper(src_path_h5):
     # '"run(' +"'test_nifty_alyosha.m');exit;" + '"'
 
     # 4) Load NIfTy TE output from .mat
-    rez_path_mat = os.path.join(pwd_rez, "results_selftest_rand.mat")
+    rez_path_mat = os.path.join(rez_path, "results_selftest_rand.mat")
     print("Loading matlab results file", rez_path_mat)
     rez_data = loadmat(rez_path_mat)
     
     # 5) Save results as HDF5
-    rez_path_h5 = os.path.join(pwd_rez, "results_selftest_rand.h5")
+    rez_path_h5 = os.path.join(rez_path, "results_selftest_rand.h5")
     print("Writing results data to", rez_path_h5)
+    
     rez_file_h5 = h5py.File(rez_path_h5, "w")
-    rez_file_h5['results'] = rez_data['results']
+    results_grp = rez_file_h5.create_group("results")
+    results_grp['data'] = rez_data['results']['data']
+    results_grp['TE_table'] = rez_data['results']['TE_table']
+    results_grp['p_table'] = rez_data['results']['p_table']
+    results_grp['delay_table'] = rez_data['results']['delay_table']
     rez_file_h5.close()
     
     return rez_path_h5
