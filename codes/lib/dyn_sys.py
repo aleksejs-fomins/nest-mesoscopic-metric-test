@@ -29,7 +29,8 @@ class DynSys:
             self.data[0, i] += np.sin(2 * np.pi * i / T)           # Input to the first node
             self.data[:, i] += np.random.normal(0, STD, N_NODE)    # Noise to all nodes
             
-    def plot(self):    
+    def plot(self):
+        print("DynSys: plotting results")
         fig, ax = plt.subplots(ncols=2, figsize=(15,5))
         ax[0].imshow(self.M)
         ax[0].set_title("Connectivity-matrix")
@@ -39,12 +40,13 @@ class DynSys:
         ax[1].set_title("Dynamics")
         plt.show()
     
-    def save(filename):
+    def save(self, filename):
+        print("DynSys: saving to", filename)
         h5f = h5py.File(filename, "w")
         
         # Write metadata
         grp_meta = h5f.create_group("metadata")
-        for key, val in self.param:
+        for key, val in self.param.items():
             grp_meta[key] = val
             
         # Write connectivity matrix

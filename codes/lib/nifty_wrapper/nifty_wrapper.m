@@ -8,10 +8,12 @@
 % MII1E2Vals(iT) = instinfo(StatesRaster, Method, VariableIDs);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-pwd = "/media/aleksejs/DataHDD/work/codes/theoretical-models/experimental-bridge/nest-mesoscopic-metric-test/";
-pwdrez = pwd + "data/sim-ds-mat/";
-addpath(char(pwd + "codes/lib/nifty_wrapper/NIfTy_Ver1/"));
-addpath(char(pwd + "codes/lib/nifty_wrapper/TE_Leo/"));
+% NOTE: core_path variable defined externally
+
+pwdrez = core_path + "data/sim-ds-mat/";
+%addpath(char(core_path + "codes/lib/nifty_wrapper/"));
+addpath(char(core_path + "codes/lib/nifty_wrapper/NIfTy_Ver1/"));
+addpath(char(core_path + "codes/lib/nifty_wrapper/TE_Leo/"));
 
 % Define channels and labels
 param.trials_total   = 200;
@@ -44,7 +46,3 @@ results.delay_table = cell_to_array(results.delay_table, 1);
 %results.entropy = cell_to_array(results.entropy, 0);
 
 save(pwdrez + "results_selftest_rand.mat", "results")
-
-
-
-

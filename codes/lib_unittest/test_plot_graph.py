@@ -4,7 +4,7 @@ thispath = os.path.dirname(os.path.abspath(__file__))
 parpath = os.path.abspath(os.path.join(thispath, os.pardir))
 sys.path.append(os.path.join(parpath, 'lib/'))
 
-from plot_graph import plotGraph
+from plots.plot_graph import plotGraph
 
 
 N_REGION = 5
@@ -25,5 +25,5 @@ for i in range(N_REGION):
 # Construct inter-layer connectivity
 for i,j in LL_CONN_POPULATIONS:    
     CONN_GRAPH_POPULATIONS += [(i, j, None)]
-    
+
 plotGraph(CONN_GRAPH_POPULATIONS, N_REGION*2, "graph.pdf")

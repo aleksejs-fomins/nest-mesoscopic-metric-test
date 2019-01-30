@@ -12,6 +12,7 @@ def computeEnergyTransfer(filepathname, withPlot = False):
     POPULATION_CONN_EXT = h5f['metadata/POPULATION_CONN_EXT']
     NEURON_CONN = h5f['metadata/NEURON_CONN']
     W_EXC_MAX_EXT = h5f['metadata/W_EXC_MAX_EXT']
+    h5f.close()
     
     #######################################
     # 1. Extract inter-layer connectivity

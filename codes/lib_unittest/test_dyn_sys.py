@@ -3,12 +3,12 @@ import os, sys
 thispath = os.path.dirname(os.path.abspath(__file__))
 p1path = os.path.abspath(os.path.join(thispath, os.pardir))
 p2path = os.path.abspath(os.path.join(p1path, os.pardir))
-sys.path.append(os.path.join(parpath, 'lib/'))
+sys.path.append(os.path.join(p1path, 'lib/'))
 
 # Locate results path
-rezPath = os.path.join(os.path.join(p2path, 'data/')), '')
+rezPath = os.path.join(os.path.join(p2path, 'data/'), 'sim-ds-py')
 
-import dyn_sys
+from dyn_sys import DynSys
 
 # Set parameters
 param = {
@@ -23,7 +23,7 @@ param = {
 DS1 = DynSys(param)
 
 # Save simulation and metadata
-DS1.save('')
+DS1.save(os.path.join(rezPath, "testDynSys.h5"))
 
 #Plot results
 DS1.plot()

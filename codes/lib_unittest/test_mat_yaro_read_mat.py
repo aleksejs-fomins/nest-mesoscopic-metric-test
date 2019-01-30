@@ -1,8 +1,13 @@
-import sys
+import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-from read_yaro import read_mat
+# Export library path
+thispath = os.path.dirname(os.path.abspath(__file__))
+parpath = os.path.abspath(os.path.join(thispath, os.pardir))
+sys.path.append(os.path.join(parpath, 'lib/'))
+
+from matlab.matlab_yaro_lib import read_mat
 # Read LVM file from command line
 inputpath = sys.argv[1]
 data, behaviour = read_mat(inputpath)

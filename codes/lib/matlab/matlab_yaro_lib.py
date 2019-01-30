@@ -3,6 +3,10 @@ from datetime import datetime
 import numpy as np
 import scipy.io
 
+'''
+ TODO: Rewrite readers using the new wrapper for SCIPY LOADMAT.
+'''
+
 def read_lvm(filename):
     print("Reading LVM file", filename, "... ")
     

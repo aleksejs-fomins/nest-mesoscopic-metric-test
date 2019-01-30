@@ -16,20 +16,6 @@ TODO:
 * Effects of dendritic and axonal signals, neuropil?
 '''
 
-
-# Compute discretized exponential decay convolution
-def approxDelayConv(data, TAU, DT):
-    rez = np.zeros(len(data)+1)
-    for i in range(1, len(data)+1):
-        rez[i] = data[i-1] + rez[i-1] * (1 - DT / TAU)
-
-    return rez[1:]
-
-# # Imitate geometric sampling, by selecting some neurons 100% and the rest exponentially dropping
-# def samplingRangeScale(x, delta, tau):
-#     return np.multiply(x < delta, 1.0) + np.multiply(x >= delta, np.exp(-(x-delta)/tau))
-
-
 # Take discretized spiking signal, produce macroscopic CA indicator response
 # NOTE: NEURON INDICES MUST BE CONTIGUOUS
 def spike2ca(spikeTimes, neuronIdxs, p):

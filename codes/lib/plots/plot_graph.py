@@ -39,6 +39,8 @@ def plotGraph(graph, nPop, savename=None):
     ax.set_ylim(-(graph_rc[1]+graph_r), (graph_rc[1]+graph_r))
     
     if savename == None:
+        print("Showing plot")
         plt.show()
     else:
+        print("Saving plot to", savename)
         plt.savefig(savename, bbox_inches='tight')

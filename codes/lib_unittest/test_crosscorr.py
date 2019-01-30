@@ -30,7 +30,7 @@ def plotRez(corrMat, corrDelMat, sprMat, sprDelMat, title):
     fig.colorbar(pl10, ax=ax[1][0])
     fig.colorbar(pl11, ax=ax[1][1])
 
-    plt.show()
+    plt.draw()
 
 '''
    Test 1:
@@ -63,20 +63,19 @@ plotRez(corrMat, corrDelMat, sprMat, sprDelMat, 'Test 1: Channels are shifts of 
    Test 2:
      Generate random data, all copies of each other, each following one a bit more noisy than prev
      Expected outcomes:
-     * If shift <= max_delay, corr ~ 1, delay = shift
-     * If shift > max_delay, corr ~ 0, delay = rand
-     * Delay is the same for all diagonals, because we compare essentially the same data, both cycled by the same amount
+     * Correlation decreases with distance between nodes, as they are separated by more noise
+     * Correlation should be approx the same for any two nodes given fixed distance between them
 '''
 
 N_NODE = 5
 N_DATA = 1000
 DELAY_MIN = 0
 DELAY_MAX = 0
-alpha = 0.2
+alpha = 0.5
 
 data = np.random.normal(0, 1, N_NODE*N_DATA).reshape((N_NODE, N_DATA))
 for i in range(1, N_NODE):
-    data[i] = data[i-1]*(1 - alpha**2) + np.random.normal(0, 1, N_DATA) * (alpha**2)
+    data[i] = data[i-1] * np.sqrt(1 - alpha) + np.random.normal(0, 1, N_DATA) * np.sqrt(alpha)
     
 print(np.var(data, axis=1))
 
@@ -86,4 +85,28 @@ sprMat, sprDelMat = crossCorr(data, DELAY_MIN, DELAY_MAX, est='spr')
 plotRez(corrMat, corrDelMat, sprMat, sprDelMat, 'Test 2: Channels are same, but progressively more noisy')
 
 
+'''
+   Test 3:
+     Random data structured by trials. Two channels (0 -> 3) connected with lag 6, others unrelated
+     Expected outcomes:
+     * No structure, except for (0 -> 3) connection
+'''
 
+N_NODE = 5
+DELAY_MIN = 1
+DELAY_MAX = 6
+N_DATA = DELAY_MAX+1
+N_TRIAL = 200
+
+data = np.random.normal(0, 1, N_TRIAL*N_DATA*N_NODE).reshape((N_TRIAL,N_DATA,N_NODE))
+data[:, -1, 3] = data[:, 0, 0]
+
+corrMat, corrDelMat = crossCorr(data, DELAY_MIN, DELAY_MAX, est='corr')
+sprMat, sprDelMat = crossCorr(data, DELAY_MIN, DELAY_MAX, est='spr')
+
+plotRez(corrMat, corrDelMat, sprMat, sprDelMat, 'Test 3: Random trial-based cross-correlation')
+
+
+
+
+plt.show()
