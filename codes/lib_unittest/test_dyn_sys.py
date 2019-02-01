@@ -6,9 +6,9 @@ p2path = os.path.abspath(os.path.join(p1path, os.pardir))
 sys.path.append(os.path.join(p1path, 'lib/'))
 
 # Locate results path
-rezPath = os.path.join(os.path.join(p2path, 'data/'), 'sim-ds-py')
+rezPath = os.path.join(os.path.join(p2path, 'data/'), 'sim_ds_h5')
 
-from dyn_sys import DynSys
+from models.dyn_sys import DynSys
 
 # Set parameters
 param = {
@@ -16,7 +16,8 @@ param = {
     'N_NODE'  : 12,   # Number of variables
     'N_DATA'  : 4000, # Number of timesteps
     'T'       : 100,  # Period of input oscillation
-    'STD'     : 0.2   # STD of neuron noise
+    'STD'     : 0.2,  # STD of neuron noise
+    'MAG'     : 1.0   # Magnitude of the periodic input
 }
 
 # Create dynamical system

@@ -1,7 +1,7 @@
 from matplotlib import colors
 import matplotlib.pyplot as plt
 
-def plotImshowMat(mat_lst, title_lst, title, shape, lims=None, draw=False):
+def plotImshowMat(mat_lst, title_lst, title, shape, lims=None, draw=False, savename=None):
     
     # Create plot matrix
     nRows, nCols = shape
@@ -21,6 +21,9 @@ def plotImshowMat(mat_lst, title_lst, title, shape, lims=None, draw=False):
         if lims is not None:
             norm = colors.Normalize(vmin=lims[i][0], vmax=lims[i][1])
             pl.set_norm(norm)
+
+    if savename is not None:
+        plt.savefig(savename, dpi=300)
 
     if draw:
         plt.draw()

@@ -18,12 +18,16 @@ from corr_lib import crossCorr
 from plots.plt_imshow_mat import plotImshowMat
 
 
-
-fname_lst = ['sim_dynsys_1.h5', 
-         'sim_dynsys_trial_1.h5',
-         'sim_noise_lpf_1.h5',
-         'sim_noise_lpf_trial_1.h5',
-         'sim_noise_pure_1.h5']
+fname_lst = [
+    'sim_noise_pure_1.h5',
+    'sim_noise_lpf_1.h5',
+    'sim_cycle_1.h5',
+    'sim_dynsys_1.h5',
+    'sim_noise_pure_trial_1.h5',
+    'sim_noise_lpf_trial_1.h5',
+    'sim_cycle_trial_1.h5',
+    'sim_dynsys_trial_1.h5'
+]
 
 for filename in fname_lst:
     
@@ -57,7 +61,8 @@ for filename in fname_lst:
         "Cross-correlation for " + filename,
         shape = (2, 2),
         lims = [[-1,1], [0, DELAY_MAX], [-1,1], [0, DELAY_MAX]],
-        draw=True
+        draw=True,
+        savename = filename.split('.')[0] + '.png'
     )
 
 
