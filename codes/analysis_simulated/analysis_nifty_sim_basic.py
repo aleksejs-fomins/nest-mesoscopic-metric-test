@@ -22,10 +22,10 @@ from plots.plt_imshow_mat import plotImshowMat
 
 
 fname_lst = [
-    'sim_noise_pure_trial_1.h5',
-    'sim_noise_lpf_trial_1.h5',
-    'sim_cycle_trial_1.h5',
-    'sim_dynsys_trial_1.h5'
+    #'sim_noise_pure_trial_1.h5',
+    #'sim_noise_lpf_trial_1.h5',
+    #'sim_cycle_trial_1.h5',
+    'sim_dynsys_trial_2.h5'
 ]
 
 for filename in fname_lst:

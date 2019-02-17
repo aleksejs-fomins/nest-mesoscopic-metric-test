@@ -32,14 +32,14 @@ param = {
 DS1 = DynSys(param)
 
 # Sample trials from data
-N_TRIAL = 200                       # Number of trials
+N_TRIAL = 1000                       # Number of trials
 N_DATA_TRIAL = 7                    # Number of timesteps per trial (to test max_lag=6)
 data3D = sampleTrials(DS1.data, N_TRIAL, N_DATA_TRIAL)
 
 ########################
 ## Save result as HDF5
 ########################
-src_path_h5 = os.path.join(rezPath, "sim_dynsys_trial_1.h5")
+src_path_h5 = os.path.join(rezPath, "sim_dynsys_trial_2.h5")
 print("Writing source data to", src_path_h5)
 src_file_h5 = h5py.File(src_path_h5, "w")
 src_file_h5['data'] = data3D

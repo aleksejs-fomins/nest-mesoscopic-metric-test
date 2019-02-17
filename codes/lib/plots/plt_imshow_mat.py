@@ -5,7 +5,7 @@ def plotImshowMat(mat_lst, title_lst, title, shape, lims=None, draw=False, saven
     
     # Create plot matrix
     nRows, nCols = shape
-    fig, ax = plt.subplots(nrows=nRows, ncols=nCols)
+    fig, ax = plt.subplots(nrows=nRows, ncols=nCols, figsize=(5*nRows, 5*nCols))
     fig.suptitle(title)
     
     # Convert plot indices to 1D index
