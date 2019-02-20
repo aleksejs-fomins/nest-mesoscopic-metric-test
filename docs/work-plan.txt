@@ -34,7 +34,7 @@ TODO
 ---------------------------------------------------------
 
 TODO - General:
-[ ] Understand & reply to Patricia about strange MTE behaviour for shift.
+[+] Understand & reply to Patricia about strange MTE behaviour for shift.
 [ ] Find way to accelerate IDTxl or get convinced that it is at max. Is it even using GPU, how to find out? Find out why [200x50x12] is not done in a day 0_0. Maybe write to Patricia also.
 [ ] Make a simple spiking model of a few (e.g 3) neurons, see how TE can be used to predict effect of one on the other.
   [ ] Use convolution + binning for different TAU / bin size
