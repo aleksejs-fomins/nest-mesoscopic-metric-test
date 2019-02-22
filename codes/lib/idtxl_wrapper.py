@@ -1,37 +1,52 @@
+#import sys
+#import contextlib
 import numpy as np
 import pandas as pd
+import pathos
 
-# Convert results structure into Pandas dataframe for better usability
-def idtxlResults2Pandas(results, N_NODE):
-    
-    cols = ['src', 'trg', 'te', 'lag', 'p']
-    df = pd.DataFrame([], columns=cols)
-    
-    for i in range(N_NODE):
-        rezThis = results.get_single_target(i, fdr=False)
-        
-        # Convert numpy arrays to lists to concatenate
-        # Make sure that if None returned, replace with empty list
-        # none2lst = lambda l: list(l) if l is not None else []
-        
-        # If any connections were found, get their data  at all was found
-        if rezThis['selected_sources_te'] is not None:
-            te  = rezThis['selected_sources_te']
-            p   = rezThis['selected_sources_pval']
-            lag = [val[1] for val in rezThis['selected_vars_sources']]
-            src = [val[0] for val in rezThis['selected_vars_sources']]
-            trg = [i] * len(te)
+# IDTxl libraries
+from idtxl.bivariate_mi import BivariateMI
+from idtxl.multivariate_mi import MultivariateMI
+from idtxl.bivariate_te import BivariateTE
+from idtxl.multivariate_te import MultivariateTE
+from idtxl.data import Data
+from idtxl.visualise_graph import plot_network
 
-            df = df.append(pd.DataFrame(list(zip(src, trg, te, lag, p)), columns=cols), ignore_index=True)
+def idtxlParallelCPU(data, settings):
+    # Get number of processes
+    idxProcesses = settings['dim_order'].index("p")
+    NProcesses = data.shape[idxProcesses]
     
-#     df = pd.DataFrame.from_dict(out)
-    df = df.sort_values(by=['src', 'trg'])
+    # Convert data to ITDxl format
+    dataIDTxl = Data(data, dim_order=settings['dim_order'])
     
-    return df
+    # Initialise analysis object
+    if   settings['method'] == "BivariateMI":     analysis_class = BivariateMI()
+    elif settings['method'] == "MultivariateMI":  analysis_class = MultivariateMI()
+    elif settings['method'] == "BivariateTE":     analysis_class = BivariateTE()
+    elif settings['method'] == "MultivariateTE":  analysis_class = MultivariateTE()
+    else:
+        raise ValueError("Unexpected method", settings['method'])
+
+    # Initialize multiprocessing pool
+    NCore = pathos.multiprocessing.cpu_count() - 1
+    pool = pathos.multiprocessing.ProcessingPool(NCore)
+    #pool = multiprocessing.Pool(NCore)
+    
+    # Run analysis
+    # Temporarily move all output to a log-file, as IDTxl likes output
+    
+    #with contextlib.redirect_stdout(open('log_out.txt', 'w')):
+    #    with contextlib.redirect_stderr(open('log_err.txt', 'w')):
+    targetLst = list(range(NProcesses))
+    parallelTask = lambda trg: analysis_class.analyse_single_target(settings=settings, data=dataIDTxl, target=trg)
+    rez = pool.map(parallelTask, targetLst)
+    return rez
 
 
 # Convert results structure into set of matrices for better usability
-def idtxlResults2matrix(results, N_NODE, method='TE'):
+def idtxlResultsParse(results, N_NODE, method='TE', storage='matrix'):
+    # Determine metric name to be extracted
     if 'TE' in method:
         metric_name = 'selected_sources_te'
     elif 'MI' in method:
@@ -39,26 +54,41 @@ def idtxlResults2matrix(results, N_NODE, method='TE'):
     else:
         raise ValueError('Unexpected method', method)
     
+    # Initialize target storage class
+    if storage=='pandas':
+        cols = ['src', 'trg', 'te', 'lag', 'p']
+        df = pd.DataFrame([], columns=cols)
+    else:    
+        te_mat = np.zeros((N_NODE, N_NODE)) + np.nan
+        lag_mat = np.zeros((N_NODE, N_NODE)) + np.nan
+        p_mat = np.zeros((N_NODE, N_NODE)) + np.nan
     
-    te_mat = np.zeros((N_NODE, N_NODE)) + np.nan
-    lag_mat = np.zeros((N_NODE, N_NODE)) + np.nan
-    p_mat = np.zeros((N_NODE, N_NODE)) + np.nan
-    
+    # Parse data
     for iTrg in range(N_NODE):
-        rezThis = results.get_single_target(iTrg, fdr=False)
+        if isinstance(results, list):
+            rezThis = results[iTrg].get_single_target(iTrg, fdr=False)
+        else:
+            rezThis = results.get_single_target(iTrg, fdr=False)
         
         # If any connections were found, get their data  at all was found
         if rezThis[metric_name] is not None:
-            rezThisZip = zip(
-                rezThis[metric_name],
-                rezThis['selected_sources_pval'],
-                [val[1] for val in rezThis['selected_vars_sources']],
-                [val[0] for val in rezThis['selected_vars_sources']]
-            )
+            te_lst  = rezThis[metric_name]
+            p_lst   = rezThis['selected_sources_pval']
+            lag_lst = [val[1] for val in rezThis['selected_vars_sources']]
+            src_lst = [val[0] for val in rezThis['selected_vars_sources']]
+            trg_lst = [iTrg] * len(te_lst)
+            rezThisZip = zip(src_lst, trg_lst, te_lst, lag_lst, p_lst)
             
-            for te, p, lag, iSrc in rezThisZip:
-                te_mat[iSrc][iTrg] = te
-                lag_mat[iSrc][iTrg] = lag
-                p_mat[iSrc][iTrg] = p
-    
-    return te_mat, lag_mat, p_mat
+            if storage=='pandas':
+                df = df.append(pd.DataFrame(list(rezThisZip), columns=cols), ignore_index=True)
+            else:            
+                for iSrc, iTrg, te, lag, p in rezThisZip:
+                    te_mat[iSrc][iTrg] = te
+                    lag_mat[iSrc][iTrg] = lag
+                    p_mat[iSrc][iTrg] = p
+    if storage=='pandas':
+        #df = pd.DataFrame.from_dict(out)
+        df = df.sort_values(by=['src', 'trg'])
+        return df        
+    else:
+        return te_mat, lag_mat, p_mat
