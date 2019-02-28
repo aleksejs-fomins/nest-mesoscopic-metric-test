@@ -27,26 +27,10 @@ Naive tests:
       - See https://www.sciencedirect.com/science/article/pii/S0167278906004805
   
 TODO
-  [ ] Inspect Yaro Docs     W:\Neurophysiology\Projects\RUNNING\MultiFiber_Learning\Manuscript \ MS_learning_vX.doc
-  [ ] Read Yaro Data        W:\Scratch-01\Yaro\data_for_TE\
+  [ ] 
   
 
 ---------------------------------------------------------
-
-TODO - General:
-[+] Understand & reply to Patricia about strange MTE behaviour for shift.
-[ ] Find way to accelerate IDTxl or get convinced that it is at max. Is it even using GPU, how to find out? Find out why [200x50x12] is not done in a day 0_0. Maybe write to Patricia also.
-[ ] Make a simple spiking model of a few (e.g 3) neurons, see how TE can be used to predict effect of one on the other.
-  [ ] Use convolution + binning for different TAU / bin size
-  [ ] Report same-bin-MI and TE - see how former increases and latter decreases with growing TAU / bin size
  
 TODO - Nearest:
-[ ] NIFTY - take DynSys, sweep over different bin sizes, report T1 error
-[ ] NIFTY & IDTXL - Threshold on TE magnitude - simulate random and autocorrelated channels for [200x7x12] as function of number of trials, find threshold for fake conn. Try up to NDays * Ntrials. Estimate also variance
-[ ] Run Yaro Data
-   - Downsampled - Sweep [200x6x12] both IDTxl and NIFTY
-   - Original    - Sweep [200x10x12] both IDTxl and NIFTY
-   - Either one  - Single number for whisk, lick, ...
-   - Either one  - Both Sweep & whisk - concatenate days for naive mouse as trials, repeat for expert mouse
-[ ] Power spectrum analysis - simple model with communication on multiple timescales - progressively increase convolution TAU, see how estimators behave
 [ ] Yaro wants to compute conn-overlap between consecutive days as a measure. Given P[T1] we estimated, what is the expected number of true overlaps?
