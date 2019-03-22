@@ -1,6 +1,13 @@
+# Load standard libraries
+import os, sys
 import numpy as np
 
-from signal_lib import approxDelayConv
+# Add path to parent folder
+pwd_lib = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(pwd_lib)
+
+# Load user libraries
+from signal_lib import approxDelayConv, downsample
 
 
 # Generate pure noise data
@@ -16,26 +23,25 @@ def noiseLPF(p):
     NT_SHIFT = int(T_SHIFT / p['DT'])
     NT       = int(p['T_TOT'] / p['DT'])
     
-    dimRez = (p['N_NODE'], NT)
-    src_data = np.zeros(dimRez)
+    if 'DT_MACRO' in p.keys():
+        NT_MACRO = int(p['T_TOT'] / p['DT_MACRO'])
+        t_arr = np.linspace(0, p['T_TOT'], NT)
+        
+    src_data = [[] for i in range(p['N_NODE'])]
 
     # Micro-simulation:
     # 1) Generate random data at neuronal timescale
     # 2) Compute convolution with Ca indicator
+    # 3) Downsample to experimental time-resolution, if requested
     for iChannel in range(p['N_NODE']):
         data_rand = np.random.uniform(0, p['STD'], NT + NT_SHIFT)
         data_conv = approxDelayConv(data_rand, p['TAU_CONV'], p['DT'])
         src_data[iChannel] = data_conv[NT_SHIFT:]
         
-    # Downsampling:
-    # * Bin convolved data to sampling timescale    
-    if 'DT_MACRO' in p.keys():
-        NT_MACRO       = int(p['T_TOT'] / p['DT_MACRO'])
-        RATIO_DOWNSAMPLE = NT // NT_MACRO
+        if 'DT_MACRO' in p.keys():
+            src_data[iChannel] = downsample(t_arr, src_data[iChannel], NT_MACRO)[1]
         
-        src_data = np.array([np.mean(rowLPF.reshape((NT_MACRO, RATIO_DOWNSAMPLE)), axis=1) for rowLPF in src_data]) 
-        
-    return src_data
+    return np.array(src_data)
 
 
 # Sample short trials from one long trial
