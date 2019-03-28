@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import pathos
+from time import gmtime, strftime
 
 # IDTxl libraries
 from idtxl.bivariate_mi import BivariateMI
@@ -12,14 +13,14 @@ from idtxl.multivariate_te import MultivariateTE
 from idtxl.data import Data
 from idtxl.visualise_graph import plot_network
 
-def getAnalysisClass(classname):
+def getAnalysisClass(methodname):
     # Initialise analysis object
-    if   settings['method'] == "BivariateMI":     return BivariateMI()
-    elif settings['method'] == "MultivariateMI":  return MultivariateMI()
-    elif settings['method'] == "BivariateTE":     return BivariateTE()
-    elif settings['method'] == "MultivariateTE":  return MultivariateTE()
+    if   methodname == "BivariateMI":     return BivariateMI()
+    elif methodname == "MultivariateMI":  return MultivariateMI()
+    elif methodname == "BivariateTE":     return BivariateTE()
+    elif methodname == "MultivariateTE":  return MultivariateTE()
     else:
-        raise ValueError("Unexpected method", settings['method'])
+        raise ValueError("Unexpected method", methodname)
 
 def idtxlParallelCPU(data, settings, NCore = None):
     # Get number of processes
@@ -46,40 +47,56 @@ def idtxlParallelCPU(data, settings, NCore = None):
     return rez
 
 
+# def multiParallelTask(sw, settings, dataIDTxl_lst, logName):
+#     with open(logName, "a+") as f:
+#         f.write("Started:  "+ str(sw) + '\n')
+#     analysis_class = getAnalysisClass(settings['methods'][sw[0]])
+#     rez = analysis_class.analyse_single_target(settings=settings, data=dataIDTxl_lst[sw[1]], target=sw[2])
+#     with open(logName, "a+") as f:
+#         f.write("Finished: "+ str(sw) + '\n')
+#     return rez
 
-def idtxlParallelCPUMulti(data_lst, settings):
-    # Get number of processes
+def idtxlParallelCPUMulti(data_lst, settings, taskName, NCore = None):
+    
+    # Determine parameters for the parameter sweep
     idxProcesses = settings['dim_order'].index("p")
-    NProcesses = data.shape[idxProcesses]
-    NMethods = len(settings['methods'])
-    NDataSets = len(data_lst)
+    mIdxs = list(range(len(settings['methods'])))
+    dIdxs = list(range(len(data_lst)))
+    pIdxs = list(range(data_lst[0].shape[idxProcesses]))
+    sweepLst = [(m, d, p) for m in mIdxs for d in dIdxs for p in pIdxs]
     
     # Convert data to ITDxl format
     dataIDTxl_lst = [Data(d, dim_order=settings['dim_order']) for d in data_lst]
-    
-    analysis_class = getAnalysisClass(settings['method'])
 
     # Initialize multiprocessing pool
-    NCore = pathos.multiprocessing.cpu_count() - 1
+    if NCore is None:
+        NCore = pathos.multiprocessing.cpu_count() - 1
     pool = pathos.multiprocessing.ProcessingPool(NCore)
     #pool = multiprocessing.Pool(NCore)
     
-    mIdxs = range(len(NMethods))
-    dIdxs = range(len(NDataSets))
-    pIdxs = range(len(NProcesses))
-    sweepLst = [(m, d, p) for m in mIdxs for d in dIdxs for p in pIdxs]
-    
-    def parallelTask(sw):
-        with open("log.txt", "w") as f:
-            f.write("Started:  "+ str(sw) + '\n')
+    # Create log file
+    logName = taskName + '.log'
+    with open(logName, 'w') as f:
+        f.write('-----Started using cores ' + str(NCore) + ' -----------\n')
+        
+#     task = lambda sw: multiParallelTask(sw, settings, dataIDTxl_lst, logName)
+
+    def multiParallelTask(sw):
+        with open(logName, "a+") as f:
+            f.write(strftime("[%Y.%m.%d %H:%M:%S]", gmtime()) + "Started:  "+ str(sw) + '\n')
         analysis_class = getAnalysisClass(settings['methods'][sw[0]])
         rez = analysis_class.analyse_single_target(settings=settings, data=dataIDTxl_lst[sw[1]], target=sw[2])
-        with open("log.txt", "w") as f:
-            f.write("Finished: "+ (str(sw) + '\n')
+        with open(logName, "a+") as f:
+            f.write(strftime("[%Y.%m.%d %H:%M:%S]", gmtime()) + "Finished: "+ str(sw) + '\n')
         return rez
+
+    rez_multilst = pool.map(multiParallelTask, sweepLst)
     
-    rez_multilst = pool.map(parallelTask, sweepLst)
-    rez = [[[rez_multilst[m, d, p] for p in pIdxs] for d in dIdxs] for m in mIdxs]
+    tripleIdxs = dict(zip(sweepLst, list(range(len(sweepLst)))))
+    rez = [[[rez_multilst[tripleIdxs[(m, d, p)]] for p in pIdxs] for d in dIdxs] for m in mIdxs]
+    
+    with open(logName, "a+") as f:
+        f.write("-------Done--------")
     
     return rez
 
