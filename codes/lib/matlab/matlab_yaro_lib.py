@@ -3,9 +3,12 @@ from datetime import datetime
 import numpy as np
 import scipy.io
 
-'''
- TODO: Rewrite readers using the new wrapper for SCIPY LOADMAT.
-'''
+# Export library path
+thispath = os.path.dirname(os.path.abspath(__file__))
+libpath = os.path.dirname(thispath)
+sys.path.append(libpath)
+
+from matlab.matlab_lib import loadmat
 
 def read_lvm(filename):
     print("Reading LVM file", filename, "... ")
@@ -39,40 +42,34 @@ def read_lvm(filename):
     return data2D
 
 
+# Convert "scipy.io.matlab.mio5_params.mat_struct object" to dict
+def matstruct2dict(matstruct):
+    return {s : [getattr(matstruct, s)] for s in dir(matstruct) if s[0]!='_'}
+
+# Merge 2 dictionaries, given that values of both are lists
+def merge_dict(d1, d2):
+    return {k1 : v1 + d2[k1] for k1, v1 in d1.items()}
+
+# Read data and behaviour matlab files given containing folder
 def read_mat(folderpath):
     # Read MAT file from command line
     print("Reading Yaro data from", folderpath)
     datafilename = os.path.join(folderpath, "data.mat")
     behaviorfilename = os.path.join(folderpath, "behaviorvar.mat")
 
-    mat1 = scipy.io.loadmat(datafilename)
-    mat2 = scipy.io.loadmat(behaviorfilename)
-
-    #d_behaviour = {
-        #'trials_1'  : np.array([row[0][0][0][0] for row in mat2['trials']]),
-        #'trials_2'  : np.array([row[0][1][0][0] for row in mat2['trials']]),
-        #'times'     : np.array([datetime.strptime(row[0][2][0], "%H:%M:%S.%f") for row in mat2['trials']]),
-        #'???_1'     : np.array([row[0][3] for row in mat2['trials']]),
-        #'???_2'     : np.array([row[0][4][0][0] for row in mat2['trials']]),
-        #'TEXTURE_NAMES'  : list(set([row[0][5][0] for row in mat2['trials']])),
-        #'TEXTURE_TYPES'  : np.array([row[0][5][0] for row in mat2['trials']]),
-        #'???_4'     : np.array([row[0][6][0] for row in mat2['trials']]),
-        #'???_5'     : np.array([row[0][7][0][0] for row in mat2['trials']]),
-        #'???_6'     : np.array([row[0][8][0] for row in mat2['trials']]),
-        #'???_7'     : np.array([row[0][9][0][0] for row in mat2['trials']]),
-        #'RESPONSE_NAMES' : list(set([row[0][10][0] for row in mat2['trials']])),
-        #'RESPONSE_TYPES' : np.array([row[0][10][0] for row in mat2['trials']]),
-        #'???_8'     : np.array([row[0][11][0][0] for row in mat2['trials']]),
-        #'???_9'     : np.array([row[0][12][0][0] for row in mat2['trials']])
-    #}
-
-    ## Enumerate textures and responses
-    #d_behaviour['TEXTURE_TYPES'] = np.array([d_behaviour['TEXTURE_NAMES'].index(texname) for texname in d_behaviour['TEXTURE_TYPES']])
-    #d_behaviour['RESPONSE_TYPES'] = np.array([d_behaviour['RESPONSE_NAMES'].index(texname) for texname in d_behaviour['RESPONSE_TYPES']])
-    #mat2['trials'] = d_behaviour
-    mat2['trials'] = {}
+    data = loadmat(datafilename)['data']
+    behavior = loadmat(behaviorfilename)
     
-    return mat1['data'], mat2
+    # Get rid of useless fields in behaviour
+    behavior = {k : v for k, v in behavior.items() if k[0] != '_'}
+    
+    # Convert trials structure to a dictionary
+    d_trials = matstruct2dict(behavior['trials'][0])
+    for i in range(1, len(behavior['trials'])):
+        d_trials = merge_dict(d_trials, matstruct2dict(behavior['trials'][i]))
+    behavior['trials'] = d_trials
+    
+    return data, behavior
 
 
 def get_subfolders(folderpath):
