@@ -47,8 +47,11 @@ def matstruct2dict(matstruct):
     return {s : [getattr(matstruct, s)] for s in dir(matstruct) if s[0]!='_'}
 
 # Merge 2 dictionaries, given that values of both are lists
-def merge_dict(d1, d2):
-    return {k1 : v1 + d2[k1] for k1, v1 in d1.items()}
+def merge_dicts(d_lst):
+    d_rez = d_lst[0]
+    for i in range(1, len(d_lst)):
+        d_rez = {k1 : v1 + d_lst[i][k1] for k1, v1 in d_rez.items()}
+    return d_rez
 
 # Read data and behaviour matlab files given containing folder
 def read_mat(folderpath):
@@ -64,10 +67,12 @@ def read_mat(folderpath):
     behavior = {k : v for k, v in behavior.items() if k[0] != '_'}
     
     # Convert trials structure to a dictionary
-    d_trials = matstruct2dict(behavior['trials'][0])
-    for i in range(1, len(behavior['trials'])):
-        d_trials = merge_dict(d_trials, matstruct2dict(behavior['trials'][i]))
-    behavior['trials'] = d_trials
+    behaviour['trials'] = merge_dicts([matstruct2dict(obj) for obj in behavior['trials']])
+    
+    # d_trials = matstruct2dict(behavior['trials'][0])
+    # for i in range(1, len(behavior['trials'])):
+    #     d_trials = merge_dict(d_trials, matstruct2dict(behavior['trials'][i]))
+    # behavior['trials'] = d_trials
     
     return data, behavior
 
