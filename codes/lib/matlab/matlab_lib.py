@@ -1,5 +1,9 @@
 import scipy.io as spio
 
+# Convert "scipy.io.matlab.mio5_params.mat_struct object" to dict
+def matstruct2dict(matstruct):
+    return {s : [getattr(matstruct, s)] for s in dir(matstruct) if s[0]!='_'}
+
 def loadmat(filename):
     '''
     this function should be called instead of direct spio.loadmat
