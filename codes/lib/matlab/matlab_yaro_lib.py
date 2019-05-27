@@ -79,15 +79,15 @@ def read_lick(folderpath):
     lick_traces_file = os.path.join(folderpath, "lick_traces.mat")
     lick_traces = loadmat(lick_traces_file)
     
-    FREQ_LICK = 100 # Hz
-    rez['tLicks'] = np.arange(0, 8, 1/FREQ_LICK)
-    truncSteps = len(rez['tLicks'])
+    nTimesLick = len(lick_traces['licks_go'])
+    freqLick = 100 # Hz
+    rez['tLicks'] = np.linspace(0, (nTimesLick-1) / freqLick, nTimesLick)
     
     # Top threshold is wrong sometimes. Yaro said to use exact one
     thBot, thTop = lick_traces['bot_thresh'], 2.64
     
     for k in ['licks_go', 'licks_nogo', 'licks_miss', 'licks_FA', 'licks_early']:
-        rez[k] = lick_filter(lick_traces[k][:truncSteps], thBot, thTop)
+        rez[k] = lick_filter(lick_traces[k], thBot, thTop)
         
     ################################
     # Process trials file
@@ -105,7 +105,44 @@ def read_lick(folderpath):
     return rez
 
 
+def read_paw(filepath):
+    paw_trials = loadmat(filepath)['trials']
+    
+    nTrialsPaw, nTimePaw = paw_trials.shape
+    if nTimePaw == 64:
+        freqPaw = 7
+    elif nTimePaw > 250:
+        freqPaw = 30
+    else:
+        raise ValueError("Unexpected number of paw timesteps", nTimePaw)
 
+    return {
+        'tPaw' : np.linspace(0, (nTimePaw-1) / freqPaw, nTimePaw),
+        'trialsPaw' : paw_trials,
+        'freqPaw' : freqPaw
+    }
+
+def read_whisk(folderpath):
+    whiskAngle = loadmat(os.path.join(folderpath, 'whiskAngle.mat'))['whiskAngle']
+    nTimesWhisk, nTrialsWhisk = whiskAngle.shape
+    if nTimesWhisk <= 400:
+        freqWhisk = 40
+    elif nTimesWhisk >= 1600:
+        freqWhisk = 200
+    else:
+        raise ValueError("Unexpected number of paw timesteps", nTimesWhisk)
+        
+    with open(os.path.join(folderpath, os.path.basename(folderpath)+'.txt')) as fLog:
+        firstTouch = np.array([line.split('\t')[1] for line in fLog.readlines()[1:]], dtype=float)
+        
+    return {
+        'tWhisk' : np.linspace(0, (nTimesWhisk-1) / freqWhisk, nTimesWhisk),
+        'whiskAngle' : whiskAngle,
+        #'whiskAbsVelocity' : np.vstack((np.abs(whiskAngle[1:] - whiskAngle[:-1])*freqWhisk, np.zeros(nTrialsWhisk))),
+        'firstTouch' : firstTouch
+    }
+
+    
 def read_lvm(filename):
     print("Reading LVM file", filename, "... ")
     
