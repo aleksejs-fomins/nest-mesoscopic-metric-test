@@ -1,5 +1,13 @@
 import scipy.io as spio
 
+# Print root level values of dict (result of loadmat)
+def inspect_mfile(d):
+    for k,v in d.items():
+        if isinstance(v, float) or isinstance(v, int) or isinstance(v, list):
+            print(k, v)
+        else:
+            print(k, v.shape)
+
 # Convert "scipy.io.matlab.mio5_params.mat_struct object" to dict
 def matstruct2dict(matstruct):
     return {s : [getattr(matstruct, s)] for s in dir(matstruct) if s[0]!='_'}

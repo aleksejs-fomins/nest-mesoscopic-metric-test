@@ -30,6 +30,10 @@ def trunc_idx(x1, xmin, xmax):
     return l, r
 
 def resample(x1, y1, x2, param):
+    N2 = len(x2)
+    y2 = np.zeros(N2)
+    DX2 = x2[1] - x2[0]   # step size for final distribution
+    
 #     # Find number of points and spacings for original and downsampled datasets
 #     N1 = len(x1)
 #     DX1 = x1[1] - x1[0]
@@ -46,11 +50,6 @@ def resample(x1, y1, x2, param):
     rangeX2 = [np.min(x2), np.max(x2)]
     if (rangeX2[0] < rangeX1[0])or(rangeX2[1] > rangeX1[1]):
         raise ValueError("Requested range", rangeX2, "exceeds the original data range", rangeX1)
-
-    
-    N2 = len(x2)
-    y2 = np.zeros(N2)
-    
     
     # UpSampling: Use if original dataset has lower sampling rate than final
     if param["method"] == "interpolative":
@@ -65,22 +64,23 @@ def resample(x1, y1, x2, param):
 
             # Window-average method
             if kind == "window":
-                #window_size = param["window_size"] if "window_size" in param.keys() else DX2
+                window_size = param["window_size"] if "window_size" in param.keys() else DX2
                 
                 # Find time-window to average
                 w_l = x2[i2] - 0.5 * window_size
                 w_r = x2[i2] + 0.5 * window_size
 
                 # Find points of original dataset to average
-                i1_l = np.max([int(np.ceil((w_l - x1[0]) / DX1)), 0])
-                i1_r = np.min([int(np.floor((w_r - x1[0]) / DX1)), N1])
+                i1_l, i1_r = trunc_idx(x1, w_l, w_r)
+                # i1_l = np.max([int(np.ceil((w_l - x1[0]) / DX1)), 0])
+                # i1_r = np.min([int(np.floor((w_r - x1[0]) / DX1)), N1])
 
                 # Compute downsampled values by averaging
                 y2[i2] = np.mean(y1[i1_l:i1_r])
 
             # Gaussian kernel method
             else:
-                #ker_sig2 = param["ker_sig2"] if "ker_sig2" in param.keys() else (DX2/2)**2
+                ker_sig2 = param["ker_sig2"] if "ker_sig2" in param.keys() else (DX2/2)**2
 
                 # Each downsampled val is average of all original val weighted by proximity kernel
                 w_ker = gaussian(x2[i2] - x1, ker_sig2)

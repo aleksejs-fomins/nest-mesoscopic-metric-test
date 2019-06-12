@@ -25,7 +25,7 @@ def read_neuro_perf(folderpath):
     behavior = {k : v for k, v in behavior.items() if k[0] != '_'}
     
     # Convert trials structure to a dictionary
-    behaviour['trials'] = merge_dicts([matstruct2dict(obj) for obj in behavior['trials']])
+    behavior['trials'] = merge_dicts([matstruct2dict(obj) for obj in behavior['trials']])
     
     # d_trials = matstruct2dict(behavior['trials'][0])
     # for i in range(1, len(behavior['trials'])):
@@ -123,24 +123,25 @@ def read_paw(filepath):
     }
 
 def read_whisk(folderpath):
-    whiskAngle = loadmat(os.path.join(folderpath, 'whiskAngle.mat'))['whiskAngle']
-    nTimesWhisk, nTrialsWhisk = whiskAngle.shape
-    if nTimesWhisk <= 400:
-        freqWhisk = 40
-    elif nTimesWhisk >= 1600:
-        freqWhisk = 200
-    else:
-        raise ValueError("Unexpected number of paw timesteps", nTimesWhisk)
+    # whiskAngle = loadmat(os.path.join(folderpath, 'whiskAngle.mat'))['whiskAngle']
+    # nTimesWhisk, nTrialsWhisk = whiskAngle.shape
+    # if nTimesWhisk <= 400:
+    #     freqWhisk = 40
+    # elif nTimesWhisk >= 1600:
+    #     freqWhisk = 200
+    # else:
+    #     raise ValueError("Unexpected number of paw timesteps", nTimesWhisk)
         
     with open(os.path.join(folderpath, os.path.basename(folderpath)+'.txt')) as fLog:
         firstTouch = np.array([line.split('\t')[1] for line in fLog.readlines()[1:]], dtype=float)
         
-    return {
-        'tWhisk' : np.linspace(0, (nTimesWhisk-1) / freqWhisk, nTimesWhisk),
-        'whiskAngle' : whiskAngle,
-        #'whiskAbsVelocity' : np.vstack((np.abs(whiskAngle[1:] - whiskAngle[:-1])*freqWhisk, np.zeros(nTrialsWhisk))),
-        'firstTouch' : firstTouch
-    }
+    # return {
+    #     'tWhisk' : np.linspace(0, (nTimesWhisk-1) / freqWhisk, nTimesWhisk),
+    #     'whiskAngle' : whiskAngle,
+    #     #'whiskAbsVelocity' : np.vstack((np.abs(whiskAngle[1:] - whiskAngle[:-1])*freqWhisk, np.zeros(nTrialsWhisk))),
+    #     'firstTouch' : firstTouch
+    # }
+    return {'firstTouch' : firstTouch}
 
     
 def read_lvm(filename):
