@@ -12,9 +12,10 @@ from matlab.matlab_lib import loadmat, matstruct2dict
 from matlab.aux_functions import merge_dicts, get_subfolders
 
 # Read data and behaviour matlab files given containing folder
-def read_neuro_perf(folderpath):
+def read_neuro_perf(folderpath, verbose=True):
     # Read MAT file from command line
-    print("Reading Yaro data from", folderpath)
+    if verbose:
+        print("Reading Yaro data from", folderpath)
     datafilename = os.path.join(folderpath, "data.mat")
     behaviorfilename = os.path.join(folderpath, "behaviorvar.mat")
 
@@ -31,6 +32,19 @@ def read_neuro_perf(folderpath):
     # for i in range(1, len(behavior['trials'])):
     #     d_trials = merge_dict(d_trials, matstruct2dict(behavior['trials'][i]))
     # behavior['trials'] = d_trials
+    
+    # CONSISTENCY TEST:
+    behKeys = ['iGO', 'iNOGO', 'iFA', 'iMISS']
+    dataNTrials = data.shape[0]
+    behavToArray = lambda b: np.array([b], dtype=int) if type(b)==int else b
+    behNTrials = np.sum([len(behavToArray(behavior[k])) for k in behKeys])
+    behMaxIdx  = np.max(np.hstack([behavToArray(behavior[k]) for k in behKeys])) - 1  # Note Matlab indices start from 1    
+    if dataNTrials < behNTrials: 
+        # raise ValueError("Behaviour has more trials than data", behNTrials, dataNTrials)
+        print("Behaviour has more trials than data", behNTrials, dataNTrials)
+    if (behMaxIdx is not None) and (behMaxIdx >= dataNTrials):
+        # raise ValueError("Behaviour max index must be less than number of trials", behMaxIdx, dataNTrials)
+        print("Behaviour max index must be less than number of trials", behMaxIdx, dataNTrials)
     
     return data, behavior
 
@@ -58,7 +72,10 @@ def read_neuro_perf_multi(rootpath):
             
     return micedict
 
-def read_lick(folderpath):        
+def read_lick(folderpath, verbose=True):
+    if verbose:
+        print("Processing lick folder", folderpath)
+    
     rez = {}
     
     ################################
@@ -81,7 +98,7 @@ def read_lick(folderpath):
     
     nTimesLick = len(lick_traces['licks_go'])
     freqLick = 100 # Hz
-    rez['tLicks'] = np.linspace(0, (nTimesLick-1) / freqLick, nTimesLick)
+    rez['tLicks'] = np.arange(0, nTimesLick) / freqLick
     
     # Top threshold is wrong sometimes. Yaro said to use exact one
     thBot, thTop = lick_traces['bot_thresh'], 2.64
@@ -94,58 +111,78 @@ def read_lick(folderpath):
     ################################
     TIMESCALE_TRACES = 0.001 # ms
     trials_file = os.path.join(folderpath, os.path.basename(folderpath)+".mat")
+    #print(trials_file)
+    
     lick_trials = loadmat(trials_file)
 
     # NOTE: lick_trials['licks']['lick_vector'] is just a repeat from above lick_traces file
 #     lick_trials['licks'] = merge_dicts([matstruct2dict(obj) for obj in lick_trials['licks']])
     lick_trials['trials'] = merge_dicts([matstruct2dict(obj) for obj in lick_trials['trials']])
+    fixearly = lambda trial : np.nan if trial=='Early' else trial
+    lick_trials['trials']['reward_time'] = [fixearly(trial) for trial in lick_trials['trials']['reward_time']]
     rez['reward_time'] = np.array(lick_trials['trials']['reward_time'], dtype=float) * TIMESCALE_TRACES
     rez['puff'] = [np.array(puff, dtype=float)*TIMESCALE_TRACES for puff in lick_trials['trials']['puff']]
         
     return rez
 
 
-def read_paw(filepath):
-    paw_trials = loadmat(filepath)['trials']
+def read_paw(folderpath, verbose=True):
+    if verbose:
+        print("Processing paw folder", folderpath)
     
-    nTrialsPaw, nTimePaw = paw_trials.shape
-    if nTimePaw == 64:
+    filepath = os.path.join(folderpath, 'trials.mat')
+    rezdict = {'trialsPaw' : loadmat(filepath)['trials']}
+    
+    nTrialsPaw, nTimesPaw = rezdict['trialsPaw'].shape
+    if nTimesPaw == 64:
         freqPaw = 7
-    elif nTimePaw > 250:
+    elif nTimesPaw > 250:
         freqPaw = 30
     else:
         raise ValueError("Unexpected number of paw timesteps", nTimePaw)
 
-    return {
-        'tPaw' : np.linspace(0, (nTimePaw-1) / freqPaw, nTimePaw),
-        'trialsPaw' : paw_trials,
-        'freqPaw' : freqPaw
-    }
+    rezdict['tPaw'] = np.arange(0, nTimesPaw) / freqPaw
+    rezdict['freqPaw'] = freqPaw
+    return rezdict
 
-def read_whisk(folderpath):
-    # whiskAngle = loadmat(os.path.join(folderpath, 'whiskAngle.mat'))['whiskAngle']
-    # nTimesWhisk, nTrialsWhisk = whiskAngle.shape
-    # if nTimesWhisk <= 400:
-    #     freqWhisk = 40
-    # elif nTimesWhisk >= 1600:
-    #     freqWhisk = 200
-    # else:
-    #     raise ValueError("Unexpected number of paw timesteps", nTimesWhisk)
+def read_whisk(folderpath, verbose=True):
+    if verbose:
+        print("Processing whisk folder", folderpath)
+    
+    #############################
+    # Read whisking angle
+    #############################
+    rezdict = {'whiskAngle' : loadmat(os.path.join(folderpath, 'whiskAngle.mat'))['whiskAngle']}
+    nTimesWhisk, nTrialsWhisk = rezdict['whiskAngle'].shape
+    if nTimesWhisk <= 900:
+        freqWhisk = 40
+    elif nTimesWhisk >= 1600:
+        freqWhisk = 200
+    else:
+        freqWhisk = 40
+        # raise ValueError("Unexpected number of whisk timesteps", nTimesWhisk)
+        print("Unexpected number of whisk timesteps", nTimesWhisk)
+    
+    rezdict['tWhisk']           = np.arange(0, nTimesWhisk) / freqWhisk
+    rezdict['whiskAbsVelocity'] = np.vstack((np.abs(rezdict['whiskAngle'][1:] - rezdict['whiskAngle'][:-1])*freqWhisk, np.zeros(nTrialsWhisk)))
         
-    with open(os.path.join(folderpath, os.path.basename(folderpath)+'.txt')) as fLog:
-        firstTouch = np.array([line.split('\t')[1] for line in fLog.readlines()[1:]], dtype=float)
-        
-    # return {
-    #     'tWhisk' : np.linspace(0, (nTimesWhisk-1) / freqWhisk, nTimesWhisk),
-    #     'whiskAngle' : whiskAngle,
-    #     #'whiskAbsVelocity' : np.vstack((np.abs(whiskAngle[1:] - whiskAngle[:-1])*freqWhisk, np.zeros(nTrialsWhisk))),
-    #     'firstTouch' : firstTouch
-    # }
-    return {'firstTouch' : firstTouch}
+    #############################
+    # Read first touch
+    #############################
+    firstTouchFilePath = os.path.join(folderpath, os.path.basename(folderpath)+'.txt')
+    if not os.path.isfile(firstTouchFilePath):
+        print("Warning: first touch file does not exist", firstTouchFilePath)
+        rezdict['firstTouch'] = None
+    else:    
+        with open(firstTouchFilePath) as fLog:
+            rezdict['firstTouch'] = np.array([line.split('\t')[1] for line in fLog.readlines()[1:]], dtype=float)
+
+    return rezdict
 
     
-def read_lvm(filename):
-    print("Reading LVM file", filename, "... ")
+def read_lvm(filename, verbose=True):
+    if verbose:
+        print("Reading LVM file", filename, "... ")
     
     # Read file
     f = open(filename, 'r')

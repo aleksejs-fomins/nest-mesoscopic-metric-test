@@ -17,39 +17,43 @@ def parseFoldersMulti(root_path_data, root_path_paw, root_path_lick, root_path_w
     micePathArr = []
     for path, name in labels_paths:
         mousename = os.path.basename(path)
-        micePathArr += [[mousename, 'channel_labels', os.path.join(path, name)]]
+        micePathArr += [[mousename, 'channel_labels', os.path.join(path, name), mousename]]
 
     ##################################
     # Get data folders for all days
     ##################################
     data_paths = getfiles_walk(root_path_data, ["data.mat"])
     for path, name in data_paths:
+        mouseday = os.path.basename(path)
         mousename = os.path.basename(os.path.dirname(path))
-        micePathArr += [[mousename, 'data_path', path]]
+        micePathArr += [[mousename, 'data_path', path, mouseday]]
 
     ##################################
     # Get paw folders for all mice
     ##################################
     paw_paths = getfiles_walk(root_path_paw, ["deltaI_paw.mat"])
     for path, name in paw_paths:
+        mouseday = os.path.basename(path)
         mousename = os.path.basename(os.path.dirname(path))
-        micePathArr += [[mousename, 'paw_path', path]]
+        micePathArr += [[mousename, 'paw_path', path, mouseday]]
 
     ##################################
     # Get lick folders for all mice
     ##################################
     lick_paths = getfiles_walk(root_path_lick, ["lick_traces.mat"])
     for path, name in lick_paths:
+        mouseday = os.path.basename(path)
         mousename = os.path.basename(os.path.dirname(path))
-        micePathArr += [[mousename, 'lick_path', path]]
+        micePathArr += [[mousename, 'lick_path', path, mouseday]]
 
     ##################################
-    # Get lick folders for all mice
+    # Get whisk folders for all mice
     ##################################
     whisk_paths = getfiles_walk(root_path_whisk, ["whiskAngle.mat"])
-    for path, name in lick_paths:
+    for path, name in whisk_paths:
+        mouseday = os.path.basename(path)
         mousename = os.path.basename(os.path.dirname(path))
-        micePathArr += [[mousename, 'whisk_path', path]]
+        micePathArr += [[mousename, 'whisk_path', path, mouseday]]
 
 
     ##################################

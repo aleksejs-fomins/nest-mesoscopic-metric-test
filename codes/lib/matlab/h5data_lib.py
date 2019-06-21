@@ -9,7 +9,8 @@ sys.path.append(libpath)
 
 from os_lib import getfiles_walk
 
-def parseTE_H5(fname):
+# Extract TE from H5 file
+def readTE_H5(fname):
     print("Reading file", fname)
     filename = os.path.join(pwd_h5, os.path.join("real_data", fname))
     h5f = h5py.File(filename, "r")
@@ -19,13 +20,50 @@ def parseTE_H5(fname):
     h5f.close()
     return (TE, lag, p)
 
+# Parse metadata from TE filenames
+def getStatistics(basenames):
+    stat = {}
+    
+    # By Analysis type
+    stat['isAnalysis'] = {}
+    stat['isAnalysis']['swipe'] = np.array(["swipe" in name for name in basenames], dtype=int)
+    stat['isAnalysis']['range'] = np.array(["range" in name for name in basenames], dtype=int)
+    stat['isAnalysis']['all'] = stat['isAnalysis']['swipe'] + stat['isAnalysis']['range'] == 0
 
-def parseTEfolders(folderpaths):
-    
-    
-    
-    for 
+    # Determine if file uses GO, NOGO, or all
+    stat['isTrial'] = {}
+    stat['isTrial']['GO'] = np.array(["iGO" in name for name in basenames], dtype=int)
+    stat['isTrial']['NOGO'] = np.array(["iNOGO" in name for name in basenames], dtype=int)
+    stat['isTrial']['ALL']  = stat['isTrial']['GO'] + stat['isTrial']['NOGO'] == 0
 
+    # Determine range types
+    stat['isRange'] = {}
+    stat['isRange']['CUE'] = np.array(["CUE" in name for name in basenames], dtype=int)
+    stat['isRange']['TEX'] = np.array(["TEX" in name for name in basenames], dtype=int)
+    stat['isRange']['LIK'] = np.array(["LIK" in name for name in basenames], dtype=int)
+    stat['isRange']['none'] = stat['isRange']['CUE'] + stat['isRange']['TEX'] + stat['isRange']['LIK'] == 0
+
+    # Determine which method was used
+    stat['isMethod'] = {}
+    stat['isMethod']['BTE'] = np.array(["BivariateTE" in name for name in basenames], dtype=int)
+    stat['isMethod']['MTE'] = np.array(["MultivariateTE" in name for name in basenames], dtype=int)
+
+    # Determine mouse which was used
+    stat['mouse_names'] = ["_".join(name.split('_')[:2]) for name in basenames]
+    
+    summary = {
+        "mousename" : {k: stat['mouse_names'].count(k) for k in set(stat['mouse_names'])},
+        "analysis"  : {k: np.sum(v) for k,v in stat['isAnalysis'].items()},
+        "trial"     : {k: np.sum(v) for k,v in stat['isTrial'].items()},
+        "range"     : {k: np.sum(v) for k,v in stat['isRange'].items()},
+        "method"    : {k: np.sum(v) for k,v in stat['isMethod'].items()}
+    }
+    
+    return stat, summary
+
+# User selects multiple sets of H5 files, corresponding to different datasets
+# Parse filenames and get statistics of files in each dataset
+def parseTEfolders():
     datafilesets = []
     basenamesets = []
     statistics = []
@@ -41,7 +79,28 @@ def parseTEfolders(folderpaths):
             pwd_tmp = os.path.dirname(datafilenames[0])  # Next time choose from parent folder
             datafilesets += [np.array(datafilenames)]
             basenamesets += [np.array([os.path.basename(name) for name in datafilenames])]
-            statistics += [getStatistics(basenamesets[-1])]
+            stat, summary = getStatistics(basenamesets[-1])
+            statistics   += [stat]
+            print(summary)
+            
+    return datafilesets, basenamesets, statistics
 
-    print('Selecting files Done, reading...')
-    datasets = [np.array([getData(fname) for fname in fnames]) for fnames in datafilesets]
+# Extract indices of TE files based on constraints
+def getTitlesAndIndices(stat, mouse, trials, methods, analysis_type, ranges=[None]):
+    rez = []
+    isCorrectMouse = np.array([mname == mouse for mname in stat['mouse_names']], dtype=int)
+    for trial in trials:
+        for method in methods:
+            for rng in ranges:
+                title = '_'.join([mouse, analysis_type, trial, method])
+                select = np.copy(isCorrectMouse)
+                select += stat['isAnalysis'][analysis_type]
+                select += stat['isTrial'][trial]
+                select += stat['isMethod'][method]
+                test = 4
+                if rng is not None:
+                    title+='_'+rng
+                    test+=1
+                    select += stat['isRange'][rng]
+                rez.append((title, select == test))
+    return rez
