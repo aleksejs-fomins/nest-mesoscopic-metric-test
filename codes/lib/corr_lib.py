@@ -1,6 +1,17 @@
 import numpy as np
 import scipy.stats
 
+# Compute correlation matrix of 3D data
+def corr3D(data):
+    nTrials, nTimes, nChannels = data.shape
+    cr = np.zeros((nChannels, nChannels))
+    for iCh in range(nChannels):
+        for jCh in range(iCh + 1, nChannels):
+            cr[iCh, jCh] = np.corrcoef(data[:,:,iCh].flatten(), data[:,:,jCh].flatten())[0, 1]
+
+    cr += cr.T
+    cr += np.diag(np.ones(nChannels))
+    return cr
 
 # Spearmann rank matrix
 # Data - 2D matrix [channel x time]
