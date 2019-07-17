@@ -7,13 +7,14 @@ thispath = os.path.dirname(os.path.abspath(__file__))
 libpath = os.path.dirname(thispath)
 sys.path.append(libpath)
 
-from os_lib import getfiles_walk
+from qt_wrapper import gui_fnames
 
 # Extract TE from H5 file
 def readTE_H5(fname):
     print("Reading file", fname)
-    filename = os.path.join(pwd_h5, os.path.join("real_data", fname))
-    h5f = h5py.File(filename, "r")
+    #filename = os.path.join(pwd_h5, os.path.join("real_data", fname))
+    #h5f = h5py.File(filename, "r")
+    h5f = h5py.File(fname, "r")
     TE = np.copy(h5f['results']['TE_table'])
     lag = np.copy(h5f['results']['delay_table'])
     p = np.copy(h5f['results']['p_table'])
@@ -63,13 +64,12 @@ def getStatistics(basenames):
 
 # User selects multiple sets of H5 files, corresponding to different datasets
 # Parse filenames and get statistics of files in each dataset
-def parseTEfolders():
+def parseTEfolders(pwd_tmp = "./"):
     datafilesets = []
     basenamesets = []
     statistics = []
 
     # GUI: Select videos for training
-    pwd_tmp = "./"
     datafilenames = None
     while datafilenames != ['']:
         datafilenames = gui_fnames("IDTXL swipe result files...", directory=pwd_tmp, filter="HDF5 Files (*.h5)")
